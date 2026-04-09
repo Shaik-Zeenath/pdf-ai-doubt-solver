@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3-Subject PDF AI Doubt Solver</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    text-align: center;
+    padding: 20px;
+    background: #020617;
+    font-size: 24px;
+    border-bottom: 2px solid #38bdf8;
+}
+
+.container {
+    display: flex;
+    max-width: 1200px;
+    margin: auto;
+    height: calc(100vh - 70px);
+}
+
+.sidebar {
+    width: 300px;
+    background: #1e293b;
+    padding: 20px;
+}
+
+.sidebar h3 {
+    margin-bottom: 10px;
+}
+
+.sidebar label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: #111827;
+}
+
+.message {
+    margin-bottom: 15px;
+    max-width: 80%;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.user {
+    background: #38bdf8;
+    align-self: flex-end;
+}
+
+.bot {
+    background: #334155;
+    align-self: flex-start;
+}
+
+.input-area {
+    display: flex;
+    padding: 10px;
+    background: #020617;
+}
+
+input, button, select {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+}
+
+input {
+    flex: 1;
+}
+
+button {
+    margin-left: 10px;
+    background: #38bdf8;
+    color: black;
+    cursor: pointer;
+}
+</style>
+
+<!-- PDF.js Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf.min.js"></script>
+</head>
+
+<body>
+
+<header>3-Subject PDF AI Doubt Solver</header>
+
+<div class="container">
+
+<div class="sidebar">
+    <h3>Upload PDFs for Subjects</h3>
+    <label>Software Engineering (SE):</label>
+    <input type="file" id="pdfSE" accept="application/pdf">
+    
+    <label>Operating Systems (OS):</label>
+    <input type="file" id="pdfOS" accept="application/pdf">
+    
+    <label>DBMS (DBMS):</label>
+    <input type="file" id="pdfDBMS" accept="application/pdf">
+    
+    <button onclick="loadAllPDFs()">Load PDFs</button>
+    
+    <hr>
+    <h3>Select Subject</h3>
+    <select id="subjectSelect">
+        <option value="">--Select Subject--</option>
+        <option value="SE">Software Engineering</option>
+        <option value="OS">Operating Systems</option>
+        <option value="DBMS">DBMS</option>
+    </select>
+</div>
+
+<div class="chat-area">
+    <div id="messages" class="messages"></div>
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Ask any topic/question from selected PDF">
+        <button onclick="sendMessage()">Ask</button>
+    </div>
+</div>
+
+</div>
+
+<script>
+let pdfDocs = { SE: null, OS: null, DBMS: null };
+let pdfTexts = { SE: [], OS: [], DBMS: [] };
+
+const messages = document.getElementById("messages");
+
+// Add message to chat
+function addMessage(text, type) {
+    const msg = document.createElement("div");
+    msg.className = "message " + type;
+    msg.innerText = text;
+    messages.appendChild(msg);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+// Load a single PDF
+async function loadPDF(fileInput, subjectKey) {
+    return new Promise((resolve, reject) => {
+        const file = fileInput.files[0];
+        if (!file) return resolve();
+
+        const reader = new FileReader();
+        reader.onload = async function() {
+            const typedArray = new Uint8Array(this.result);
+            const loadingTask = pdfjsLib.getDocument(typedArray);
+            const pdfDoc = await loadingTask.promise;
+            pdfDocs[subjectKey] = pdfDoc;
+            pdfTexts[subjectKey] = [];
+
+            const pagesPromises = [];
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                pagesPromises.push(
+                    pdfDoc.getPage(i).then(page =>
+                        page.getTextContent().then(content => {
+                            pdfTexts[subjectKey][i - 1] = content.items.map(item => item.str).join(' ');
+                        })
+                    )
+                );
+            }
+            await Promise.all(pagesPromises);
+            resolve();
+        };
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+// Load all PDFs
+async function loadAllPDFs() {
+    await loadPDF(document.getElementById('pdfSE'), 'SE');
+    await loadPDF(document.getElementById('pdfOS'), 'OS');
+    await loadPDF(document.getElementById('pdfDBMS'), 'DBMS');
+    alert('All PDFs loaded successfully! Now select a subject and ask questions.');
+}
+
+// Search PDF for question in selected subject
+function getPDFAnswer(query, subjectKey) {
+    if (!pdfDocs[subjectKey]) return "Please upload the PDF for this subject first.";
+
+    query = query.toLowerCase();
+    const matches = [];
+    pdfTexts[subjectKey].forEach((text, index) => {
+        if (text.toLowerCase().includes(query)) {
+            matches.push({ page: index + 1, snippet: text });
+        }
+    });
+
+    if (matches.length > 0) {
+        const firstMatch = matches[0];
+        const snippet = firstMatch.snippet.substring(0, 300) + "...";
+        return `Found on page ${firstMatch.page}:\n${snippet}`;
+    } else {
+        return "Topic not found in PDF. Try rephrasing your question.";
+    }
+}
+
+// Send message from user
+function sendMessage() {
+    const input = document.getElementById("userInput");
+    const query = input.value.trim();
+    const subjectKey = document.getElementById("subjectSelect").value;
+    if (!query) return;
+    if (!subjectKey) return alert("Please select a subject first.");
+
+    addMessage(query, "user");
+
+    setTimeout(() => {
+        const response = getPDFAnswer(query, subjectKey);
+        addMessage(response, "bot");
+    }, 500);
+
+    input.value = "";
+}
+</script>
+
+</body>
+</html>

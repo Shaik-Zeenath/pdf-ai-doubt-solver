@@ -322,7 +322,7 @@ function getPDFAnswer(query, subjectKey) {
 
     if (matches.length > 0) {
         const firstMatch = matches[0];
-        const snippet = firstMatch.snippet.substring(0, 30000) + "...";
+        const snippet = firstMatch.snippet.substring(0, 3000) + "...";
         return `Found on page ${firstMatch.page}:\n${snippet}`;
     } else {
         return "Topic not found in PDF. Try rephrasing your question.";
@@ -342,7 +342,7 @@ function sendMessage() {
     setTimeout(() => {
         const response = getPDFAnswer(query, subjectKey);
         addMessage(response, "bot");
-    }, 500);
+    }, 3000);
 
     input.value = "";
 }

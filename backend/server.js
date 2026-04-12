@@ -19,7 +19,7 @@ app.post("/chat", async (req, res) => {
     "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
   },
   body: JSON.stringify({
-    model: "gpt-3.5-turbo",
+    model: "gpt-4o-mini",
     messages: [
       { role: "user", content: userMessage }
     ]
@@ -28,10 +28,16 @@ app.post("/chat", async (req, res) => {
 
 const data = await response.json();
 
-console.log("OPENAI RAW:", data);
+console.log("OPENAI FULL RESPONSE:", JSON.stringify(data, null, 2));
+
+if (!response.ok) {
+  return res.json({
+    reply: "OpenAI error: " + data.error?.message
+  });
+}
 
 res.json({
-  reply: data.choices?.[0]?.message?.content || "AI failed to respond"
+  reply: data.choices?.[0]?.message?.content || "No content returned"
 });
 
   } catch (error) {

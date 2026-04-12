@@ -27,7 +27,10 @@ app.post("/chat", async (req, res) => {
     });
 
     const data = await response.json();
-    res.json(data);
+
+console.log("OPENAI RESPONSE:", data);
+
+res.json({ reply: data });
 
   } catch (error) {
     res.status(500).json({ error: "Server error" });

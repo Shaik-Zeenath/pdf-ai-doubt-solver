@@ -1,25 +1,18 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import fetch from "node-fetch";
 
 dotenv.config();
 
 const app = express();
 
-/* ✅ Middleware */
-app.use(cors({
-  origin: "*"
-}));
-
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-/* ✅ HEALTH CHECK */
 app.get("/", (req, res) => {
-  res.send("Groq Backend is running 🚀");
+  res.send("Groq backend running 🚀");
 });
 
-/* ✅ MAIN AI ROUTE */
 app.post("/ask", async (req, res) => {
   try {
     const { question, context } = req.body;
@@ -35,42 +28,35 @@ app.post("/ask", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: "You are a helpful AI that answers questions based on the provided PDF context."
+            content: "Answer based on PDF context only."
           },
           {
             role: "user",
-            content: `Context from PDF:\n${context}\n\nQuestion:\n${question}`
+            content: `Context:\n${context}\n\nQuestion:\n${question}`
           }
-        ],
-        temperature: 0.7
+        ]
       })
     });
 
     const data = await response.json();
 
-    console.log("GROQ RESPONSE:", JSON.stringify(data, null, 2));
-
     if (!response.ok) {
       return res.json({
-        answer: "Groq API error: " + (data.error?.message || "Unknown error")
+        answer: "Groq error: " + (data.error?.message || "Unknown error")
       });
     }
 
     res.json({
-      answer: data.choices?.[0]?.message?.content || "No response from AI"
+      answer: data.choices?.[0]?.message?.content || "No response"
     });
 
-  } catch (error) {
-    console.error("Server error:", error);
-    res.status(500).json({
-      error: "Server error"
-    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-/* ✅ START SERVER */
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
   console.log("Server running on port", PORT);
 });

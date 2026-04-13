@@ -331,47 +331,20 @@ function getPDFAnswer(query, subjectKey) {
 
 // Send message from user
 function sendMessage() {
-    async function sendMessage() {
     const input = document.getElementById("userInput");
     const query = input.value.trim();
     const subjectKey = document.getElementById("subjectSelect").value;
-
     if (!query) return;
     if (!subjectKey) return alert("Please select a subject first.");
 
     addMessage(query, "user");
 
-    // 1️⃣ FIRST TRY PDF SEARCH
-    const pdfAnswer = getPDFAnswer(query, subjectKey);
-
-    // If PDF has real answer → show it
-    if (!pdfAnswer.includes("not found")) {
-        addMessage(pdfAnswer, "bot");
-        input.value = "";
-        return;
-    }
-
-    // 2️⃣ IF NOT FOUND → CALL AI BACKEND
-    try {
-        const res = await fetch("https://pdf-ai-doubt-solver.onrender.com/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: query + " (Explain simply for " + subjectKey + " subject)"
-            })
-        });
-
-        const data = await res.json();
-        addMessage(data.reply || "No AI response", "bot");
-
-    } catch (error) {
-        addMessage("Error connecting to AI server", "bot");
-    }
+    setTimeout(() => {
+        const response = getPDFAnswer(query, subjectKey);
+        addMessage(response, "bot");
+    }, 500);
 
     input.value = "";
-
 }
 </script>
 

@@ -24,18 +24,18 @@ app.post("/ask", async (req, res) => {
         "Authorization": `Bearer ${process.env.GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: "llama3-8b-8192",
-        messages: [
-          {
-            role: "system",
-            content: "Answer based on PDF context only."
-          },
-          {
-            role: "user",
-            content: `Context:\n${context}\n\nQuestion:\n${question}`
-          }
-        ]
-      })
+  model: "llama-3.1-8b-instant",
+  messages: [
+    {
+      role: "system",
+      content: "Answer based on PDF context only."
+    },
+    {
+      role: "user",
+      content: `Context:\n${context}\n\nQuestion:\n${question}`
+    }
+  ]
+})
     });
 
     const data = await response.json();
